@@ -45,6 +45,7 @@ class PDAL_DLL PointContainer
 {
     friend class PointView;
     friend class PointRef;
+
 private:
     virtual void setFieldInternal(Dimension::Id dim, PointId idx,
         const void *val) = 0;
@@ -62,6 +63,7 @@ private:
         {}
 public:
     virtual PointLayoutPtr layout() const = 0;
+    virtual ~PointContainer() = default;
 };
 
 } // namespace pdal

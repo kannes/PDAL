@@ -47,13 +47,18 @@ class PDAL_DLL PointRef
 public:
     // This ctor is normally used by some std::algorithm that needs a temporary.
     // See the copy ctor below for more info.
-    PointRef() : m_container(nullptr), m_layout(nullptr), m_idx(0), m_tmp(false)
-    {}
+    PointRef()
+    {
+        std::cerr << "empty ctor " << std::endl;
+        reset();
+    }
 
     PointRef(PointContainer& container, PointId idx = 0) :
         m_container(&container), m_layout(container.layout()), m_idx(idx),
         m_tmp(false)
-    {}
+    {
+        std::cerr << "PointRef (container) with idx: " << m_idx << std::endl;
+    }
 
     // Normally a point ref shouldn't be copied. But a PointRef is the *value* type
     // when using an algorithm on a PointView. Some algorithms create a temporary copy
@@ -77,11 +82,13 @@ public:
     PointRef(const PointRef& r) :
         m_container(r.m_container), m_layout(r.m_layout), m_tmp(true)
     {
+        std::cerr << "copy ctor with idx: " << r.m_idx << std::endl;
         m_idx = m_container->getTemp(r.m_idx);
     }
 
     ~PointRef()
     {
+        std::cerr << "~dtor with idx: " << m_idx << std::endl;
         if (m_tmp)
             m_container->freeTemp(m_idx);
     }
@@ -90,6 +97,8 @@ public:
     // the info on the copy ctor above for more info.
     PointRef& operator=(const PointRef& r)
     {
+
+        std::cerr << "assignment operator= with idx: " << r.m_idx << std::endl;
         if (!m_container)
         {
             m_container = r.m_container;
@@ -101,6 +110,43 @@ public:
             m_container->setItem(m_idx, r.m_idx);
         return *this;
     }
+
+
+    PointRef(PointRef&& r)
+    {
+        std::cerr << "move ctor with idx: " << r.m_idx << std::endl;
+        m_container = r.m_container;
+        m_layout = r.m_layout;
+        m_idx = m_container->getTemp(r.m_idx);
+        m_tmp = true;
+
+//        r.reset();
+    }
+
+    PointRef& operator=(PointRef&& r)
+    {
+        std::cerr << "move operator= with idx: " << r.m_idx << std::endl;
+        if (this != &r)
+        {
+
+            if (!m_container)
+            {
+                m_container = r.m_container;
+                m_layout = r.m_layout;
+                m_tmp = true;
+
+                m_idx = m_container->getTemp(r.m_idx);
+            }
+            else
+                m_container->setItem(m_idx, r.m_idx);
+
+//            r.reset();
+
+
+        }
+        return *this;
+    }
+
 
     /**
       Determine if the point contains the specified dimension (defers to
@@ -310,6 +356,15 @@ private:
     PointLayout *m_layout;
     PointId m_idx;
     bool m_tmp;
+
+
+    void reset()
+    {
+        m_container = nullptr;
+        m_layout = nullptr;
+        m_idx = 0;
+        m_tmp = 0;
+    }
 };
 
 inline void swap(const PointRef& r1, const PointRef& r2)
